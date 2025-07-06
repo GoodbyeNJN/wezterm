@@ -434,7 +434,7 @@ impl WindowOps for WaylandWindow {
         });
     }
 
-    fn config_did_change(&self, config: &config::ConfigHandle) {
+    fn config_did_change(&self, config: &ConfigHandle) {
         let config = config.to_owned();
         WaylandConnection::with_window_inner(self.0, move |inner| {
             inner.config_did_change(&config);
@@ -501,14 +501,6 @@ impl WindowOps for WaylandWindow {
 
     fn restore(&self) {
         WaylandConnection::with_window_inner(self.0, move |inner| Ok(inner.restore()));
-    }
-
-    fn config_did_change(&self, config: &ConfigHandle) {
-        let config = config.clone();
-        WaylandConnection::with_window_inner(self.0, move |inner| {
-            inner.config_did_change(config);
-            Ok(())
-        });
     }
 }
 #[derive(Default, Clone, Debug)]
@@ -1085,7 +1077,7 @@ impl WaylandWindowInner {
         Ok(())
     }
 
-    fn config_did_change(&mut self, config: &config::ConfigHandle) {
+    fn config_did_change(&mut self, config: &ConfigHandle) {
         let decorations = config.window_decorations;
         self.window_frame
             .set_resizable(decorations.contains(WindowDecorations::RESIZE));
@@ -1093,6 +1085,8 @@ impl WaylandWindowInner {
             FrameConfig::auto().hide_titlebar(!decorations.contains(WindowDecorations::TITLE)),
         );
         self.refresh_frame();
+        self.config = config.to_owned();
+        self.update_window_background_blur();
     }
 
     fn set_inner_size(&mut self, width: usize, height: usize) {
@@ -1310,11 +1304,6 @@ impl WaylandWindowInner {
         if let Some(window) = self.window.as_mut() {
             window.unset_maximized();
         }
-    }
-
-    fn config_did_change(&mut self, config: ConfigHandle) {
-        self.config = config;
-        self.update_window_background_blur();
     }
 
     fn update_window_background_blur(&self) {
